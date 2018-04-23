@@ -24,6 +24,7 @@
 #include "CLI/Split.hpp"
 #include "CLI/StringTools.hpp"
 #include "CLI/TypeTools.hpp"
+#include "CLI/Formatter.hpp"
 
 namespace CLI {
 
@@ -102,6 +103,9 @@ class App {
     /// A pointer to the help flag if there is one INHERITABLE
     Option *help_ptr_{nullptr};
 
+    /// This is the formatter for help printing. Default provided. INHERITABLE
+    std::function < std::string(const App *, Formatter::Mode) formatter_{Formatter()};
+
     /// The error message printing function INHERITABLE
     std::function<std::string(const App *, const Error &e)> failure_message_ = FailureMessage::simple;
 
@@ -141,7 +145,7 @@ class App {
     /// True if this command/subcommand was parsed
     bool parsed_{false};
 
-    /// Minimum required subcommands
+    /// Minimum required subcommands INHERITABLE
     size_t require_subcommand_min_ = 0;
 
     /// Max number of subcommands allowed (parsing stops after this number). 0 is unlimited INHERITABLE
@@ -185,7 +189,9 @@ class App {
             fallthrough_ = parent_->fallthrough_;
             group_ = parent_->group_;
             footer_ = parent_->footer_;
+            formatter_ = parent_->formatter_;
             require_subcommand_max_ = parent_->require_subcommand_max_;
+            require_subcommand_min_ = parent_->require_subcommand_min_;
         }
     }
 
@@ -247,6 +253,12 @@ class App {
                     throw OptionAlreadyAdded(subc->name_);
             }
         }
+        return this;
+    }
+
+    /// Set the help formatter
+    App *formatter(std::function < std::string(const App *, Formatter::Mode) fmt) {
+        formatter_ = fmt;
         return this;
     }
 
@@ -801,8 +813,8 @@ class App {
         throw OptionNotFound(name);
     }
 
-    /// Get a subcommand pointer list to the currently selected subcommands (after parsing by default, in command line
-    /// order)
+    /// Get a subcommand pointer list to the currently selected subcommands (after parsing by by default, in command
+    /// line order; use parsed = false to get the original definition list.)
     std::vector<App *> get_subcommands(bool parsed = true) const {
         if(parsed) {
             return parsed_subcommands_;
@@ -885,105 +897,20 @@ class App {
         return out.str();
     }
 
-    /// Makes a help message, with a column wid for column 1
-    std::string help(size_t wid = 30, std::string prev = "") const {
-        // Delegate to subcommand if needed
+    /// Makes a help message, using the currently configured formatter
+    /// Will only do one subcommand at a time
+    std::string help(std::string prev = "") const {
         if(prev.empty())
-            prev = name_;
+            prev = app->get_name();
         else
-            prev += " " + name_;
+            prev += " " + app->get_name();
 
+        // Delegate to subcommand if needed
         auto selected_subcommands = get_subcommands();
         if(!selected_subcommands.empty())
-            return selected_subcommands.at(0)->help(wid, prev);
-
-        std::stringstream out;
-        out << description_ << std::endl;
-        out << "Usage:" << (prev.empty() ? "" : " ") << prev;
-
-        // Check for options_
-        bool npos = false;
-        std::vector<std::string> groups;
-        for(const Option_p &opt : options_) {
-            if(opt->nonpositional()) {
-                npos = true;
-
-                // Add group if it is not already in there
-                if(std::find(groups.begin(), groups.end(), opt->get_group()) == groups.end()) {
-                    groups.push_back(opt->get_group());
-                }
-            }
-        }
-
-        if(npos)
-            out << " [OPTIONS]";
-
-        // Positionals
-        bool pos = false;
-        for(const Option_p &opt : options_)
-            if(opt->get_positional()) {
-                // A hidden positional should still show up in the usage statement
-                // if(detail::to_lower(opt->get_group()).empty())
-                //    continue;
-                out << " " << opt->help_positional();
-                if(opt->_has_help_positional())
-                    pos = true;
-            }
-
-        if(!subcommands_.empty()) {
-            if(require_subcommand_min_ > 0)
-                out << " SUBCOMMAND";
-            else
-                out << " [SUBCOMMAND]";
-        }
-
-        out << std::endl;
-
-        // Positional descriptions
-        if(pos) {
-            out << std::endl << "Positionals:" << std::endl;
-            for(const Option_p &opt : options_) {
-                if(detail::to_lower(opt->get_group()).empty())
-                    continue; // Hidden
-                if(opt->_has_help_positional())
-                    detail::format_help(out, opt->help_pname(), opt->get_description(), wid);
-            }
-        }
-
-        // Options
-        if(npos) {
-            for(const std::string &group : groups) {
-                if(detail::to_lower(group).empty())
-                    continue; // Hidden
-                out << std::endl << group << ":" << std::endl;
-                for(const Option_p &opt : options_) {
-                    if(opt->nonpositional() && opt->get_group() == group)
-                        detail::format_help(out, opt->help_name(true), opt->get_description(), wid);
-                }
-            }
-        }
-
-        // Subcommands
-        if(!subcommands_.empty()) {
-            std::set<std::string> subcmd_groups_seen;
-            for(const App_p &com : subcommands_) {
-                const std::string &group_key = detail::to_lower(com->get_group());
-                if(group_key.empty() || subcmd_groups_seen.count(group_key) != 0)
-                    continue; // Hidden or not in a group
-
-                subcmd_groups_seen.insert(group_key);
-                out << std::endl << com->get_group() << ":" << std::endl;
-                for(const App_p &new_com : subcommands_)
-                    if(detail::to_lower(new_com->get_group()) == group_key)
-                        detail::format_help(out, new_com->get_name(), new_com->description_, wid);
-            }
-        }
-
-        if(!footer_.empty()) {
-            out << std::endl << footer_ << std::endl;
-        }
-
-        return out.str();
+            return selected_subcommands.at(0)->help(prev);
+        else
+            return formatter(this, prev, Formatter::Mode::Standard);
     }
 
     ///@}
@@ -1056,6 +983,20 @@ class App {
         }
 
         return local_name == name_to_check;
+    }
+
+    /// Get the groups available directly from this option (in order)
+    std::vector<std::string> get_groups() const {
+        std::vector<std::string> groups;
+
+        for(const Option_p &opt : options_) {
+            // Add group if it is not already in there
+            if(std::find(groups.begin(), groups.end(), opt->get_group()) == groups.end()) {
+                groups.push_back(opt->get_group());
+            }
+        }
+
+        return groups;
     }
 
     /// This gets a vector of pointers with the original parse order
