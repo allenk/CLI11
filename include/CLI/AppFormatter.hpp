@@ -11,47 +11,52 @@
 namespace CLI {
 namespace detail {
 
-inline std::string AppFormatter::make_group(const App *app, std::string group, std::vector<Option *> opts) {}
-
-inline std::string AppFormatter::make_groups(const App *app) {
-    std::vector<std::string> groups = app->get_groups();
-    std::vector<Option *> options = app->get_options();
-
-    bool npos = std::any_of(options.begin(), options.end(), [](const Option *opt) { return opt->nonpositional(); });
-
-    bool pos = std::any_of(options.begin(), options.end(), [](const Option *opt) { return !opt->nonpositional(); });
-
-    // Positional descriptions
+inline std::string
+AppFormatter::make_group(std::string group, std::vector<Option *> opts, detail::OptionFormatter::Mode mode) const {
     std::stringstream out;
-    if(pos) {
-        out << std::endl << get_label("POSITIONALS") << ":" << std::endl;
-        for(const Option *opt : app->get_options()) {
-            if(detail::to_lower(opt->get_group()).empty())
-                continue; // Hidden
-            if(opt->_has_help_positional())
-                detail::format_help(out, opt->get_name(true), opt->get_description(), wid);
-        }
-    }
-
-    // Options
-    if(npos) {
-        for(const std::string &group : groups) {
-            if(detail::to_lower(group).empty())
-                continue; // Hidden
-            out << std::endl << group << ":" << std::endl;
-            for(const Option *opt : app->get_options()) {
-                if(opt->nonpositional() && opt->get_group() == group)
-                    detail::format_help(out, opt->get_name(false, true), opt->get_description(), wid);
-            }
-        }
+    out << std::endl << group << ":" << std::endl;
+    for(const Option *opt : opts) {
+        opt->help(mode);
     }
 
     return out.str();
 }
 
-inline std::string AppFormatter::make_description(const App *app) { return app->get_description(); }
+inline std::string AppFormatter::make_groups(const App *app) const {
+    std::stringstream out;
+    std::vector<std::string> groups = app->get_groups();
+    std::vector<Option *> options = app->get_options();
 
-inline std::string AppFormatter::make_usage(const App *app, std::string name) {
+    // Hide empty options
+    options.erase(std::remove_if(options.begin(), options.end(), [](Option *opt) { return opt->get_group().empty(); }),
+                  options.end());
+
+    // Positional descriptions
+    std::vector<Option *> positionals;
+    std::copy_if(options.begin(), options.end(), std::back_inserter(positionals), [](const Option *opt) {
+        return opt->has_help_positional();
+    });
+
+    if(!positionals.empty())
+        make_group(get_label("POSITIONALS"), positionals, detail::OptionFormatter::Mode::Positional);
+
+    // Options
+    for(const std::string &group : groups) {
+        std::vector<Option *> grouped_items;
+        std::copy_if(options.begin(), options.end(), std::back_inserter(grouped_items), [&group](const Option *opt) {
+            return opt->nonpositional() && opt->get_group() == group;
+        });
+
+        if(!grouped_items.empty())
+            make_group(group, grouped_items, detail::OptionFormatter::Mode::Optional);
+    }
+
+    return out.str();
+}
+
+inline std::string AppFormatter::make_description(const App *app) const { return app->get_description(); }
+
+inline std::string AppFormatter::make_usage(const App *app, std::string name) const {
     std::stringstream out;
 
     out << get_label("USAGE") << ":" << (name.empty() ? "" : " ") << name;
@@ -59,50 +64,63 @@ inline std::string AppFormatter::make_usage(const App *app, std::string name) {
     std::vector<std::string> groups = app->get_groups();
     std::vector<Option *> options = app->get_options();
 
-    bool npos = std::any_of(options.begin(), options.end(), [](const Option *opt) { return opt->nonpositional(); });
-
-    if(npos)
+    // Print an Options badge if any options exist
+    bool non_pos_options =
+        std::any_of(options.begin(), options.end(), [](const Option *opt) { return opt->nonpositional(); });
+    if(non_pos_options)
         out << " [" << get_label("OPTIONS") << "]";
 
-    // Positionals
-    for(const Option_p &opt : options_)
-        if(opt->get_positional()) {
-            // A hidden positional should still show up in the usage statement
-            // if(detail::to_lower(opt->get_group()).empty())
-            //    continue;
-            out << " " << opt->help_positional();
-        }
+    // Positionals need to be listed here
+    std::vector<Option *> positionals;
+    std::copy_if(options.begin(), options.end(), std::back_inserter(positionals), [](const Option *opt) {
+        return opt->has_help_positional();
+    });
 
-    if(!get_subcommands(false).empty()) {
-        out << " ";
-        if(app->get_require_subcommand_min() == 0)
-            out << "[";
-        if(std::abs(get_require_subcommand_max()) == 1)
-            get_label("SUBCOMMAND");
-        else
-            get_label("SUBCOMMANDS");
-        if(app->get_require_subcommand_min() == 0)
-            out << "]";
+    // Print out positionals if any are left
+    if(!positionals.empty()) {
+        // Convert to help names
+        std::vector<std::string> positional_names(positionals.size());
+        std::transform(positionals.begin(), positionals.end(), positional_names.begin(), [](const Option *opt) {
+            return opt->help(detail::OptionFormatter::Mode::Usage);
+        });
+
+        out << " " << detail::join(positional_names, " ");
+    }
+
+    // Add a marker if subcommands are expected or optional
+    if(!app->get_subcommands(false).empty()) {
+        out << " " << (app->get_require_subcommand_min() == 0 ? "[" : "")
+            << get_label(app->get_require_subcommand_max() == 1 ? "SUBCOMMAND" : "SUBCOMMANDS")
+            << (app->get_require_subcommand_min() == 0 ? "]" : "");
     }
 
     return out.str();
 }
 
-inline std::string AppFormatter::make_footer(const App *app) { return app->get_footer(); }
+inline std::string AppFormatter::make_footer(const App *app) const { return app->get_footer(); }
 
-inline std::string AppFormatter::operator()(const App *app, std::string name, App::Formatter::Mode mode) {
+inline std::string AppFormatter::operator()(const App *app, std::string name, App::Formatter::Mode mode) const {
 
     std::stringstream out;
-    out << make_description() << std::endl;
+    out << make_description(app) << std::endl;
     if(mode != App::Formatter::Mode::Sub) {
-        out << make_usage() << std::endl;
-        out << make_subcommands(mode) << std::endl;
-        out << make_footer() << std::endl;
+        out << make_usage(app, name) << std::endl;
+        out << make_groups(app) << std::endl;
+        out << make_subcommands(app, mode);
+        out << make_footer(app) << std::endl;
+    } else {
+        std::vector<App *> subs = app->get_subcommands(false);
+        std::vector<std::string> sub_details(subs.size());
+        std::transform(subs.begin(), subs.end(), sub_details.begin(), [](App *sub) {
+            return sub->help(App::Formatter::Mode::Sub);
+        });
+        out << detail::join(sub_details, "\n");
     }
+
     return out.str();
 }
 
-inline std::string AppFormatter::make_subcommands(const App *app, App::Formatter::Mode mode) {
+inline std::string AppFormatter::make_subcommands(const App *app, App::Formatter::Mode mode) const {
     std::stringstream out;
     // Subcommands
     std::vector<App *> subcommands = app->get_subcommands(false);
@@ -124,7 +142,7 @@ inline std::string AppFormatter::make_subcommands(const App *app, App::Formatter
     return out.str();
 }
 
-inline std::string AppFormatter::make_subcommand(const App *sub, App::Formatter::Mode mode) {
+inline std::string AppFormatter::make_subcommand(const App *sub, App::Formatter::Mode mode) const {
     if(mode == App::Formatter::Mode::All) {
         return sub->help(App::Formatter::Mode::Sub)
     } else {

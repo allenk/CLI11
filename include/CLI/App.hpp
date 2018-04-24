@@ -902,7 +902,7 @@ class App {
 
     /// Makes a help message, using the currently configured formatter
     /// Will only do one subcommand at a time
-    std::string help(std::string prev = "") const {
+    std::string help(std::string prev = "", Formatter::Mode mode = Formatter::Mode::Normal) const {
         if(prev.empty())
             prev = get_name();
         else
@@ -913,7 +913,7 @@ class App {
         if(!selected_subcommands.empty())
             return selected_subcommands.at(0)->help(prev);
         else
-            return formatter_(this, prev, Formatter::Mode::Normal);
+            return formatter_(this, prev, mode);
     }
 
     ///@}

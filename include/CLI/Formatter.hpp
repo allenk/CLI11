@@ -155,13 +155,13 @@ class AppFormatter {
     ///@{
 
     /// This prints out a group of options
-    std::string make_group(const App *app, std::string group, std::vector<Option *> opts) const;
+    std::string make_group(std::string group, std::vector<Option *> opts, detail::OptionFormatter::Mode mode) const;
 
     /// This prints out all the groups of options
     std::string make_groups(const App *app) const;
 
     /// This prints out all the subcommands
-    std::string make_subommands(const App *app, Mode mode) const;
+    std::string make_subcommands(const App *app, Mode mode) const;
 
     /// This prints out a subcommand
     std::string make_subcommand(const App *sub, Mode mode) const;

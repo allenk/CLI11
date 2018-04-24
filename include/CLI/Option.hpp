@@ -523,7 +523,7 @@ class Option : public OptionBase<Option> {
     /// * `pname` with type info MOVED to `help_name`
     /// * `help_aftername()` MOVED to `help_opts()`
     /// * Instead of `opt->help_mode()` use `opt->help(mode)`
-    std::string help(Formatter::Mode mode) { return formatter_(this, mode); }
+    std::string help(Formatter::Mode mode) const { return formatter_(this, mode); }
 
     ///@}
     /// @name Parser tools
@@ -677,12 +677,10 @@ class Option : public OptionBase<Option> {
     std::string get_type_name() const { return typeval_; }
 
     ///@}
-
-  protected:
     /// @name App Helpers
     ///@{
     /// Can print positional name detailed option if true
-    bool _has_help_positional() const {
+    bool has_help_positional() const {
         return get_positional() && (has_description() || !requires_.empty() || !excludes_.empty());
     }
     ///@}
