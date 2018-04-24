@@ -336,9 +336,9 @@ TEST_F(TApp, GetNameCheck) {
     auto a = app.add_flag("--that");
     auto b = app.add_flag("-x");
     auto c = app.add_option("pos", x);
-    auto d = app.add_option("one,-o,--other")
+    auto d = app.add_option("one,-o,--other", x);
 
-                 EXPECT_EQ(a->get_name(false, true), "--that");
+    EXPECT_EQ(a->get_name(false, true), "--that");
     EXPECT_EQ(b->get_name(false, true), "-x");
     EXPECT_EQ(c->get_name(false, true), "pos");
 

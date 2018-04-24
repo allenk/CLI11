@@ -11,8 +11,9 @@
 namespace CLI {
 namespace detail {
 
-inline std::string
-AppFormatter::make_group(std::string group, std::vector<Option *> opts, detail::OptionFormatter::Mode mode) const {
+inline std::string AppFormatter::make_group(std::string group,
+                                            std::vector<const Option *> opts,
+                                            detail::OptionFormatter::Mode mode) const {
     std::stringstream out;
     out << std::endl << group << ":" << std::endl;
     for(const Option *opt : opts) {
@@ -25,26 +26,16 @@ AppFormatter::make_group(std::string group, std::vector<Option *> opts, detail::
 inline std::string AppFormatter::make_groups(const App *app) const {
     std::stringstream out;
     std::vector<std::string> groups = app->get_groups();
-    std::vector<Option *> options = app->get_options();
-
-    // Hide empty options
-    options.erase(std::remove_if(options.begin(), options.end(), [](Option *opt) { return opt->get_group().empty(); }),
-                  options.end());
-
-    // Positional descriptions
-    std::vector<Option *> positionals;
-    std::copy_if(options.begin(), options.end(), std::back_inserter(positionals), [](const Option *opt) {
-        return opt->has_help_positional();
-    });
+    std::vector<const Option *> positionals =
+        app->get_options([](const Option *opt) { return !opt->get_group().empty() && opt->has_help_positional(); });
 
     if(!positionals.empty())
         make_group(get_label("POSITIONALS"), positionals, detail::OptionFormatter::Mode::Positional);
 
     // Options
     for(const std::string &group : groups) {
-        std::vector<Option *> grouped_items;
-        std::copy_if(options.begin(), options.end(), std::back_inserter(grouped_items), [&group](const Option *opt) {
-            return opt->nonpositional() && opt->get_group() == group;
+        std::vector<const Option *> grouped_items = app->get_options([&group](const Option *opt) {
+            return !opt->get_group().empty() && opt->nonpositional() && opt->get_group() == group;
         });
 
         if(!grouped_items.empty())
@@ -62,19 +53,16 @@ inline std::string AppFormatter::make_usage(const App *app, std::string name) co
     out << get_label("USAGE") << ":" << (name.empty() ? "" : " ") << name;
 
     std::vector<std::string> groups = app->get_groups();
-    std::vector<Option *> options = app->get_options();
 
     // Print an Options badge if any options exist
-    bool non_pos_options =
-        std::any_of(options.begin(), options.end(), [](const Option *opt) { return opt->nonpositional(); });
-    if(non_pos_options)
+    std::vector<const Option *> non_pos_options =
+        app->get_options([](const Option *opt) { return opt->nonpositional(); });
+    if(!non_pos_options.empty())
         out << " [" << get_label("OPTIONS") << "]";
 
     // Positionals need to be listed here
-    std::vector<Option *> positionals;
-    std::copy_if(options.begin(), options.end(), std::back_inserter(positionals), [](const Option *opt) {
-        return opt->has_help_positional();
-    });
+    std::vector<const Option *> positionals =
+        app->get_options([](const Option *opt) { return opt->has_help_positional(); });
 
     // Print out positionals if any are left
     if(!positionals.empty()) {

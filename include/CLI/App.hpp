@@ -948,12 +948,20 @@ class App {
     /// Get the app or subcommand description
     std::string get_description() const { return description_; }
 
-    /// Get the list of options (user facing function, so returns raw pointers)
-    std::vector<Option *> get_options() const {
-        std::vector<Option *> options(options_.size());
+    /// Get the list of options (user facing function, so returns raw pointers), has optional filter function
+    std::vector<const Option *> get_options(const std::function<bool(const Option *)> filter = {}) const {
+        std::vector<const Option *> options(options_.size());
         std::transform(std::begin(options_), std::end(options_), std::begin(options), [](const Option_p &val) {
             return val.get();
         });
+
+        if(filter) {
+            options.erase(std::remove_if(std::begin(options),
+                                         std::end(options),
+                                         [&filter](const Option *opt) { return !filter(opt); }),
+                          std::end(options));
+        }
+
         return options;
     }
 
