@@ -107,7 +107,10 @@ class OptionFormatter {
     /// @brief This is the standard help combiner that does the "default" thing.
     std::string operator()(const Option *opt, Mode mode) const {
         std::stringstream out;
-        detail::format_help(out, make_name(opt, mode) + make_opts(opt), make_desc(opt), column_width_);
+        if(mode == Mode::Usage)
+            out << make_usage(opt);
+        else
+            detail::format_help(out, make_name(opt, mode) + make_opts(opt), make_desc(opt), column_width_);
         return out.str();
     }
 

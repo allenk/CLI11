@@ -27,17 +27,17 @@ inline std::string AppFormatter::make_groups(const App *app) const {
     std::stringstream out;
     std::vector<std::string> groups = app->get_groups();
     std::vector<const Option *> positionals =
-        app->get_options([](const Option *opt) { return !opt->get_group().empty() && opt->has_help_positional(); });
+        app->get_options([](const Option *opt) { return !opt->get_group().empty() && opt->get_positional(); });
 
     if(!positionals.empty())
-        make_group(get_label("POSITIONALS"), positionals, detail::OptionFormatter::Mode::Positional);
+        out << make_group(get_label("POSITIONALS"), positionals, detail::OptionFormatter::Mode::Positional);
 
     // Options
     for(const std::string &group : groups) {
         std::vector<const Option *> grouped_items =
             app->get_options([&group](const Option *opt) { return opt->nonpositional() && opt->get_group() == group; });
 
-        if(!grouped_items.empty()) {
+        if(!group.empty() && !grouped_items.empty()) {
             out << make_group(group, grouped_items, detail::OptionFormatter::Mode::Optional);
             if(group != groups.back())
                 out << "\n";
@@ -70,8 +70,7 @@ inline std::string AppFormatter::make_usage(const App *app, std::string name) co
         out << " [" << get_label("OPTIONS") << "]";
 
     // Positionals need to be listed here
-    std::vector<const Option *> positionals =
-        app->get_options([](const Option *opt) { return opt->has_help_positional(); });
+    std::vector<const Option *> positionals = app->get_options([](const Option *opt) { return opt->get_positional(); });
 
     // Print out positionals if any are left
     if(!positionals.empty()) {
@@ -87,7 +86,8 @@ inline std::string AppFormatter::make_usage(const App *app, std::string name) co
     // Add a marker if subcommands are expected or optional
     if(!app->get_subcommands({}).empty()) {
         out << " " << (app->get_require_subcommand_min() == 0 ? "[" : "")
-            << get_label(app->get_require_subcommand_max() == 1 ? "SUBCOMMAND" : "SUBCOMMANDS")
+            << get_label(app->get_require_subcommand_max() < 2 || app->get_require_subcommand_min() > 1 ? "SUBCOMMAND"
+                                                                                                        : "SUBCOMMANDS")
             << (app->get_require_subcommand_min() == 0 ? "]" : "");
     }
 

@@ -675,15 +675,6 @@ class Option : public OptionBase<Option> {
 
     /// Get the typename for this option
     std::string get_type_name() const { return typeval_; }
-
-    ///@}
-    /// @name App Helpers
-    ///@{
-    /// Can print positional name detailed option if true
-    bool has_help_positional() const {
-        return get_positional() && (has_description() || !requires_.empty() || !excludes_.empty());
-    }
-    ///@}
 };
 
 } // namespace CLI

@@ -12,10 +12,10 @@ namespace CLI {
 namespace detail {
 
 inline std::string OptionFormatter::make_name(const Option *opt, Option::Formatter::Mode mode) const {
-    if(mode == Option::Formatter::Mode::Positional)
-        return opt->get_name(true, false);
-    else
+    if(mode == Option::Formatter::Mode::Optional)
         return opt->get_name(false, true);
+    else
+        return opt->get_name(true, false);
 }
 
 inline std::string OptionFormatter::make_opts(const Option *opt) const {
@@ -51,13 +51,16 @@ inline std::string OptionFormatter::make_opts(const Option *opt) const {
 inline std::string OptionFormatter::make_desc(const Option *opt) const { return opt->get_description(); }
 
 inline std::string OptionFormatter::make_usage(const Option *opt) const {
-    std::string out;
+    // Note that these are positionals usages
+    std::stringstream out;
+    out << make_name(opt, Mode::Usage);
+
     if(opt->get_expected() > 1)
-        out = out + "(" + std::to_string(opt->get_expected()) + "x)";
-    else if(opt->get_expected() == -1)
-        out = out + "...";
-    out = opt->get_required() ? out : "[" + out + "]";
-    return out;
+        out << "(" << std::to_string(opt->get_expected()) << "x)";
+    else if(opt->get_expected() < 0)
+        out << "...";
+
+    return opt->get_required() ? out.str() : "[" + out.str() + "]";
 }
 
 } // namespace detail
