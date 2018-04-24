@@ -336,10 +336,17 @@ TEST_F(TApp, GetNameCheck) {
     auto a = app.add_flag("--that");
     auto b = app.add_flag("-x");
     auto c = app.add_option("pos", x);
+    auto d = app.add_option("one,-o,--other")
 
-    EXPECT_EQ(a->get_name(), "--that");
-    EXPECT_EQ(b->get_name(), "-x");
-    EXPECT_EQ(c->get_name(), "pos");
+                 EXPECT_EQ(a->get_name(false, true), "--that");
+    EXPECT_EQ(b->get_name(false, true), "-x");
+    EXPECT_EQ(c->get_name(false, true), "pos");
+
+    EXPECT_EQ(d->get_name(), "--other");
+    EXPECT_EQ(d->get_name(false, false), "--other");
+    EXPECT_EQ(d->get_name(false, true), "--other,-o");
+    EXPECT_EQ(d->get_name(true, true), "one,--other,-o");
+    EXPECT_EQ(d->get_name(true, false), "one");
 }
 
 TEST_F(TApp, SubcommandDefaults) {

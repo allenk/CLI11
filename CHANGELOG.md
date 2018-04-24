@@ -1,3 +1,12 @@
+### Version 1.6: Formatters
+
+
+Changes to the help system (most normal users will not notice this):
+
+* Renamed `single_name` to `get_name(false, false)` (the default)
+* The old `get_name()` is now `get_name(false, true)`
+
+
 ### Version 1.5.3: Compiler compatibility
 This version fixes older AppleClang compilers by removing the optimization for casting. The minimum version of Boost Optional supported has been clarified to be 1.58. CUDA 7.0 NVCC is now supported.
 

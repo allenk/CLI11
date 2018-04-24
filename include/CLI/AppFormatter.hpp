@@ -22,13 +22,14 @@ inline std::string AppFormatter::make_groups(const App *app) {
     bool pos = std::any_of(options.begin(), options.end(), [](const Option *opt) { return !opt->nonpositional(); });
 
     // Positional descriptions
+    std::stringstream out;
     if(pos) {
         out << std::endl << get_label("POSITIONALS") << ":" << std::endl;
-        for(const Option_p &opt : app->get_options()) {
+        for(const Option *opt : app->get_options()) {
             if(detail::to_lower(opt->get_group()).empty())
                 continue; // Hidden
             if(opt->_has_help_positional())
-                detail::format_help(out, opt->help_pname(), opt->get_description(), wid);
+                detail::format_help(out, opt->get_name(true), opt->get_description(), wid);
         }
     }
 
@@ -38,12 +39,14 @@ inline std::string AppFormatter::make_groups(const App *app) {
             if(detail::to_lower(group).empty())
                 continue; // Hidden
             out << std::endl << group << ":" << std::endl;
-            for(const Option_p &opt : app->get_options()) {
+            for(const Option *opt : app->get_options()) {
                 if(opt->nonpositional() && opt->get_group() == group)
-                    detail::format_help(out, opt->help_name(true), opt->get_description(), wid);
+                    detail::format_help(out, opt->get_name(false, true), opt->get_description(), wid);
             }
         }
     }
+
+    return out.str();
 }
 
 inline std::string AppFormatter::make_description(const App *app) { return app->get_description(); }

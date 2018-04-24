@@ -385,9 +385,9 @@ TEST(THelp, NiceName) {
     auto short_name = app.add_option("more,-x,-y", x);
     auto positional = app.add_option("posit", x);
 
-    EXPECT_EQ(long_name->single_name(), "--long");
-    EXPECT_EQ(short_name->single_name(), "-x");
-    EXPECT_EQ(positional->single_name(), "posit");
+    EXPECT_EQ(long_name->get_name(), "--long");
+    EXPECT_EQ(short_name->get_name(), "-x");
+    EXPECT_EQ(positional->get_name(), "posit");
 }
 
 TEST(Exit, ErrorWithHelp) {

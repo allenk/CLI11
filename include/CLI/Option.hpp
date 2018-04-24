@@ -265,11 +265,11 @@ class Option : public OptionBase<Option> {
     Option *expected(int value) {
         // Break if this is a flag
         if(type_size_ == 0)
-            throw IncorrectConstruction::SetFlag(single_name());
+            throw IncorrectConstruction::SetFlag(get_name(true, true));
 
         // Setting 0 is not allowed
         else if(value == 0)
-            throw IncorrectConstruction::Set0Opt(single_name());
+            throw IncorrectConstruction::Set0Opt(get_name());
 
         // No change is okay, quit now
         else if(expected_ == value)
@@ -277,11 +277,11 @@ class Option : public OptionBase<Option> {
 
         // Type must be a vector
         else if(type_size_ >= 0)
-            throw IncorrectConstruction::ChangeNotVector(single_name());
+            throw IncorrectConstruction::ChangeNotVector(get_name());
 
         // TODO: Can support multioption for non-1 values (except for join)
         else if(value != 1 && multi_option_policy_ != MultiOptionPolicy::Throw)
-            throw IncorrectConstruction::AfterMultiOpt(single_name());
+            throw IncorrectConstruction::AfterMultiOpt(get_name());
 
         expected_ = value;
         return this;
@@ -310,7 +310,7 @@ class Option : public OptionBase<Option> {
     Option *needs(Option *opt) {
         auto tup = requires_.insert(opt);
         if(!tup.second)
-            throw OptionAlreadyAdded::Requires(single_name(), opt->single_name());
+            throw OptionAlreadyAdded::Requires(get_name(), opt->get_name());
         return this;
     }
 
@@ -391,7 +391,7 @@ class Option : public OptionBase<Option> {
 
         for(const Option_p &opt : parent->options_)
             if(opt.get() != this && *opt == *this)
-                throw OptionAlreadyAdded(opt->get_name());
+                throw OptionAlreadyAdded(opt->get_name(true, true));
 
         return this;
     }
@@ -400,7 +400,7 @@ class Option : public OptionBase<Option> {
     Option *multi_option_policy(MultiOptionPolicy value = MultiOptionPolicy::Throw) {
 
         if(get_items_expected() < 0)
-            throw IncorrectConstruction::MultiOptionPolicy(single_name());
+            throw IncorrectConstruction::MultiOptionPolicy(get_name());
         multi_option_policy_ = value;
         return this;
     }
@@ -482,8 +482,8 @@ class Option : public OptionBase<Option> {
 
             std::vector<std::string> name_list;
 
-            /// The all list wil never include a positional unless asked.
-            if(positional && !opt_only && pname_.length() > 0)
+            /// The all list wil never include a positional unless asked or that's the only name.
+            if((positional && pname_.length()) || (snames_.empty() && lnames_.empty()))
                 name_list.push_back(pname_);
 
             for(const std::string &sname : snames_)
@@ -497,7 +497,7 @@ class Option : public OptionBase<Option> {
         } else {
 
             // This returns the positional name no matter what
-            if(force_positional)
+            if(positional)
                 return pname_;
 
             // Prefer long name
@@ -538,7 +538,7 @@ class Option : public OptionBase<Option> {
                 for(const std::function<std::string(std::string &)> &vali : validators_) {
                     std::string err_msg = vali(result);
                     if(!err_msg.empty())
-                        throw ValidationError(single_name(), err_msg);
+                        throw ValidationError(get_name(), err_msg);
                 }
         }
 
@@ -566,7 +566,7 @@ class Option : public OptionBase<Option> {
             // For now, vector of non size 1 types are not supported but possibility included here
             if((get_items_expected() > 0 && results_.size() != static_cast<size_t>(get_items_expected())) ||
                (get_items_expected() < 0 && results_.size() < static_cast<size_t>(-get_items_expected())))
-                throw ArgumentMismatch(single_name(), get_items_expected(), results_.size());
+                throw ArgumentMismatch(get_name(), get_items_expected(), results_.size());
             else
                 local_result = !callback_(results_);
         }

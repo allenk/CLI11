@@ -92,18 +92,21 @@ class OptionFormatter {
     ///@{
 
     /// @brief This is the name part of an option, Default: left column
-    std::string help_name(const Option *, Mode) const;
+    std::string make_name(const Option *, Mode) const;
 
     /// @brief This is the options part of the name, Default: combined into left column
-    std::string help_opts(const Option *, Mode) const;
+    std::string make_opts(const Option *, Mode) const;
 
     /// @brief This is the description. Default: Right column, on new line if left column too large
-    std::string help_desc(const Option *, Mode) const;
+    std::string make_desc(const Option *, Mode) const;
+
+    /// @brief This is used to print the name on the USAGE line (by App formatter)
+    std::string make_usage(const Option *opt) const;
 
     /// @brief This is the standard help combiner that does the "default" thing.
     std::string operator()(const Option *opt, Mode mode) const {
         std::stringstream out;
-        detail::format_help(out, help_name(opt, mode) + help_opts(opt, mode), help_desc(opt, mode), column_width_);
+        detail::format_help(out, make_name(opt, mode) + make_opts(opt, mode), make_desc(opt, mode), column_width_);
         return out.str();
     }
 
@@ -152,28 +155,28 @@ class AppFormatter {
     ///@{
 
     /// This prints out a group of options
-    std::string make_group(const App *app, std::string group, std::vector<Option *> opts);
+    std::string make_group(const App *app, std::string group, std::vector<Option *> opts) const;
 
     /// This prints out all the groups of options
-    std::string make_groups(const App *app);
+    std::string make_groups(const App *app) const;
 
     /// This prints out all the subcommands
-    std::string make_subommands(const App *app, Mode mode);
+    std::string make_subommands(const App *app, Mode mode) const;
 
     /// This prints out a subcommand
-    std::string make_subcommand(const App *sub, Mode mode);
+    std::string make_subcommand(const App *sub, Mode mode) const;
 
     /// This prints out all the groups of options
-    std::string make_footer(const App *app);
+    std::string make_footer(const App *app) const;
 
     /// This displays the description line
-    std::string make_description(const App *app);
+    std::string make_description(const App *app) const;
 
     /// This displays the usage line
-    std::string make_usage(const App *app, std::string name);
+    std::string make_usage(const App *app, std::string name) const;
 
     /// This puts everything together
-    std::string operator()(const App *, Mode);
+    std::string operator()(const App *, std::string, Mode) const;
     ///@}
 };
 

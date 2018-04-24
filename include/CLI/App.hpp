@@ -59,6 +59,9 @@ class App {
     friend Option;
     friend detail::AppFriend;
 
+  public:
+    using Formatter = detail::AppFormatter;
+
   protected:
     // This library follows the Google style guide for member names ending in underscores
 
@@ -104,7 +107,7 @@ class App {
     Option *help_ptr_{nullptr};
 
     /// This is the formatter for help printing. Default provided. INHERITABLE
-    std::function < std::string(const App *, Formatter::Mode) formatter_{Formatter()};
+    std::function<std::string(const App *, std::string, Formatter::Mode)> formatter_{Formatter()};
 
     /// The error message printing function INHERITABLE
     std::function<std::string(const App *, const Error &e)> failure_message_ = FailureMessage::simple;
@@ -257,7 +260,7 @@ class App {
     }
 
     /// Set the help formatter
-    App *formatter(std::function < std::string(const App *, Formatter::Mode) fmt) {
+    App *formatter(std::function<std::string(const App *, std::string, Formatter::Mode)> fmt) {
         formatter_ = fmt;
         return this;
     }
@@ -901,16 +904,16 @@ class App {
     /// Will only do one subcommand at a time
     std::string help(std::string prev = "") const {
         if(prev.empty())
-            prev = app->get_name();
+            prev = get_name();
         else
-            prev += " " + app->get_name();
+            prev += " " + get_name();
 
         // Delegate to subcommand if needed
         auto selected_subcommands = get_subcommands();
         if(!selected_subcommands.empty())
             return selected_subcommands.at(0)->help(prev);
         else
-            return formatter(this, prev, Formatter::Mode::Standard);
+            return formatter_(this, prev, Formatter::Mode::Normal);
     }
 
     ///@}
@@ -1162,20 +1165,20 @@ class App {
             if(opt->get_required() || opt->count() != 0) {
                 // Make sure enough -N arguments parsed (+N is already handled in parsing function)
                 if(opt->get_items_expected() < 0 && opt->count() < static_cast<size_t>(-opt->get_items_expected()))
-                    throw ArgumentMismatch::AtLeast(opt->single_name(), -opt->get_items_expected());
+                    throw ArgumentMismatch::AtLeast(opt->get_name(), -opt->get_items_expected());
 
                 // Required but empty
                 if(opt->get_required() && opt->count() == 0)
-                    throw RequiredError(opt->single_name());
+                    throw RequiredError(opt->get_name());
             }
             // Requires
             for(const Option *opt_req : opt->requires_)
                 if(opt->count() > 0 && opt_req->count() == 0)
-                    throw RequiresError(opt->single_name(), opt_req->single_name());
+                    throw RequiresError(opt->get_name(), opt_req->get_name());
             // Excludes
             for(const Option *opt_ex : opt->excludes_)
                 if(opt->count() > 0 && opt_ex->count() != 0)
-                    throw ExcludesError(opt->single_name(), opt_ex->single_name());
+                    throw ExcludesError(opt->get_name(), opt_ex->get_name());
         }
 
         auto selected_subcommands = get_subcommands();
@@ -1449,7 +1452,7 @@ class App {
             }
 
             if(num > 0) {
-                throw ArgumentMismatch::TypedAtLeast(op->single_name(), num, op->get_type_name());
+                throw ArgumentMismatch::TypedAtLeast(op->get_name(), num, op->get_type_name());
             }
         }
 
@@ -1465,7 +1468,7 @@ namespace FailureMessage {
 inline std::string simple(const App *app, const Error &e) {
     std::string header = std::string(e.what()) + "\n";
     if(app->get_help_ptr() != nullptr)
-        header += "Run with " + app->get_help_ptr()->single_name() + " for more information.\n";
+        header += "Run with " + app->get_help_ptr()->get_name() + " for more information.\n";
     return header;
 }
 
