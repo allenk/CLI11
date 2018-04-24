@@ -148,7 +148,7 @@ class App {
     /// True if this command/subcommand was parsed
     bool parsed_{false};
 
-    /// Minimum required subcommands INHERITABLE
+    /// Minimum required subcommands (not inheritable!)
     size_t require_subcommand_min_ = 0;
 
     /// Max number of subcommands allowed (parsing stops after this number). 0 is unlimited INHERITABLE
@@ -194,7 +194,6 @@ class App {
             footer_ = parent_->footer_;
             formatter_ = parent_->formatter_;
             require_subcommand_max_ = parent_->require_subcommand_max_;
-            require_subcommand_min_ = parent_->require_subcommand_min_;
         }
     }
 

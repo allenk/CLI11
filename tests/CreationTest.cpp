@@ -344,8 +344,8 @@ TEST_F(TApp, GetNameCheck) {
 
     EXPECT_EQ(d->get_name(), "--other");
     EXPECT_EQ(d->get_name(false, false), "--other");
-    EXPECT_EQ(d->get_name(false, true), "--other,-o");
-    EXPECT_EQ(d->get_name(true, true), "one,--other,-o");
+    EXPECT_EQ(d->get_name(false, true), "-o,--other");
+    EXPECT_EQ(d->get_name(true, true), "one,-o,--other");
     EXPECT_EQ(d->get_name(true, false), "one");
 }
 
