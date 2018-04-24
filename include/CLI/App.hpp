@@ -178,7 +178,7 @@ class App {
         // Inherit if not from a nullptr
         if(parent_ != nullptr) {
             if(parent_->help_ptr_ != nullptr)
-                set_help_flag(parent_->help_ptr_->get_name(), parent_->help_ptr_->get_description());
+                set_help_flag(parent_->help_ptr_->get_name(false, true), parent_->help_ptr_->get_description());
 
             /// OptionDefaults
             option_defaults_ = parent_->option_defaults_;
@@ -193,7 +193,6 @@ class App {
             group_ = parent_->group_;
             footer_ = parent_->footer_;
             formatter_ = parent_->formatter_;
-            help_ptr_ = parent_->help_ptr_;
             require_subcommand_max_ = parent_->require_subcommand_max_;
         }
     }
