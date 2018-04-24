@@ -18,7 +18,7 @@ inline std::string OptionFormatter::make_name(const Option *opt, Option::Formatt
         return opt->get_name(false, true);
 }
 
-inline std::string OptionFormatter::make_opts(const Option *opt, Option::Formatter::Mode mode) const {
+inline std::string OptionFormatter::make_opts(const Option *opt) const {
     std::stringstream out;
 
     if(opt->get_type_size() != 0) {
@@ -48,9 +48,7 @@ inline std::string OptionFormatter::make_opts(const Option *opt, Option::Formatt
     return out.str();
 }
 
-inline std::string OptionFormatter::make_desc(const Option *opt, Option::Formatter::Mode mode) const {
-    return opt->get_description();
-}
+inline std::string OptionFormatter::make_desc(const Option *opt) const { return opt->get_description(); }
 
 inline std::string OptionFormatter::make_usage(const Option *opt) const {
     std::string out;

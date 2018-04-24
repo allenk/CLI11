@@ -85,6 +85,7 @@ class OptionFormatter {
     /// Get the current value of a name (REQUIRED, etc.)
     std::string get_label(std::string key) const { return labels_.at(key); }
 
+    /// Get the current column width
     size_t get_column_width() const { return column_width_; }
 
     ///@}
@@ -95,10 +96,10 @@ class OptionFormatter {
     std::string make_name(const Option *, Mode) const;
 
     /// @brief This is the options part of the name, Default: combined into left column
-    std::string make_opts(const Option *, Mode) const;
+    std::string make_opts(const Option *) const;
 
     /// @brief This is the description. Default: Right column, on new line if left column too large
-    std::string make_desc(const Option *, Mode) const;
+    std::string make_desc(const Option *) const;
 
     /// @brief This is used to print the name on the USAGE line (by App formatter)
     std::string make_usage(const Option *opt) const;
@@ -106,7 +107,7 @@ class OptionFormatter {
     /// @brief This is the standard help combiner that does the "default" thing.
     std::string operator()(const Option *opt, Mode mode) const {
         std::stringstream out;
-        detail::format_help(out, make_name(opt, mode) + make_opts(opt, mode), make_desc(opt, mode), column_width_);
+        detail::format_help(out, make_name(opt, mode) + make_opts(opt), make_desc(opt), column_width_);
         return out.str();
     }
 
@@ -118,6 +119,9 @@ class AppFormatter {
     using Mode = AppFormatterMode;
     /// @name Options
     ///@{
+
+    /// The width of the first column
+    size_t column_width_{30};
 
     /// @brief The required help printout labels (user changable)
     /// Values are REQUIRED, NEEDS, EXCLUDES
@@ -144,12 +148,21 @@ class AppFormatter {
         return this;
     }
 
+    /// Set the column width
+    AppFormatter *set_column_width(size_t val) {
+        column_width_ = val;
+        return this;
+    }
+
     ///@}
     /// @name Getters
     ///@{
 
     /// Get the current value of a name (REQUIRED, etc.)
     std::string get_label(std::string key) const { return labels_.at(key); }
+
+    /// Get the current column width
+    size_t get_column_width() const { return column_width_; }
 
     /// @name Overridables
     ///@{

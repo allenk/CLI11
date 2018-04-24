@@ -818,16 +818,41 @@ class App {
 
     /// Get a subcommand pointer list to the currently selected subcommands (after parsing by by default, in command
     /// line order; use parsed = false to get the original definition list.)
-    std::vector<App *> get_subcommands(bool parsed = true) const {
-        if(parsed) {
-            return parsed_subcommands_;
-        } else {
-            std::vector<App *> subcomms(subcommands_.size());
-            std::transform(std::begin(subcommands_), std::end(subcommands_), std::begin(subcomms), [](const App_p &v) {
-                return v.get();
-            });
-            return subcomms;
+    std::vector<App *> get_subcommands() const { return parsed_subcommands_; }
+
+    /// Get a filtered subcommand pointer list from the original definition list. An empty function will provide all
+    /// subcommands
+    std::vector<const App *> get_subcommands(const std::function<bool(const App *)> &filter) const {
+        std::vector<const App *> subcomms(subcommands_.size());
+        std::transform(std::begin(subcommands_), std::end(subcommands_), std::begin(subcomms), [](const App_p &v) {
+            return v.get();
+        });
+
+        if(filter) {
+            subcomms.erase(std::remove_if(std::begin(subcomms),
+                                          std::end(subcomms),
+                                          [&filter](const App *app) { return !filter(app); }),
+                           std::end(subcomms));
         }
+
+        return subcomms;
+    }
+
+    /// Get a filtered subcommand pointer list from the original definition list. An empty function will provide all
+    /// subcommands (const)
+    std::vector<App *> get_subcommands(const std::function<bool(App *)> &filter) {
+        std::vector<App *> subcomms(subcommands_.size());
+        std::transform(std::begin(subcommands_), std::end(subcommands_), std::begin(subcomms), [](const App_p &v) {
+            return v.get();
+        });
+
+        if(filter) {
+            subcomms.erase(
+                std::remove_if(std::begin(subcomms), std::end(subcomms), [&filter](App *app) { return !filter(app); }),
+                std::end(subcomms));
+        }
+
+        return subcomms;
     }
 
     /// Check to see if given subcommand was selected
