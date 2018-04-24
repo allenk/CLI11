@@ -193,6 +193,7 @@ class App {
             group_ = parent_->group_;
             footer_ = parent_->footer_;
             formatter_ = parent_->formatter_;
+            help_ptr_ = parent_->help_ptr_;
             require_subcommand_max_ = parent_->require_subcommand_max_;
         }
     }
@@ -820,7 +821,7 @@ class App {
     std::vector<App *> get_subcommands() const { return parsed_subcommands_; }
 
     /// Get a filtered subcommand pointer list from the original definition list. An empty function will provide all
-    /// subcommands
+    /// subcommands (const)
     std::vector<const App *> get_subcommands(const std::function<bool(const App *)> &filter) const {
         std::vector<const App *> subcomms(subcommands_.size());
         std::transform(std::begin(subcommands_), std::end(subcommands_), std::begin(subcomms), [](const App_p &v) {
@@ -838,7 +839,7 @@ class App {
     }
 
     /// Get a filtered subcommand pointer list from the original definition list. An empty function will provide all
-    /// subcommands (const)
+    /// subcommands
     std::vector<App *> get_subcommands(const std::function<bool(App *)> &filter) {
         std::vector<App *> subcomms(subcommands_.size());
         std::transform(std::begin(subcommands_), std::end(subcommands_), std::begin(subcomms), [](const App_p &v) {

@@ -15,9 +15,9 @@ inline std::string AppFormatter::make_group(std::string group,
                                             std::vector<const Option *> opts,
                                             detail::OptionFormatter::Mode mode) const {
     std::stringstream out;
-    out << std::endl << group << ":" << std::endl;
+    out << "\n" << group << ":\n";
     for(const Option *opt : opts) {
-        opt->help(mode);
+        out << opt->help(mode);
     }
 
     return out.str();
@@ -34,18 +34,27 @@ inline std::string AppFormatter::make_groups(const App *app) const {
 
     // Options
     for(const std::string &group : groups) {
-        std::vector<const Option *> grouped_items = app->get_options([&group](const Option *opt) {
-            return !opt->get_group().empty() && opt->nonpositional() && opt->get_group() == group;
-        });
+        std::vector<const Option *> grouped_items =
+            app->get_options([&group](const Option *opt) { return opt->nonpositional() && opt->get_group() == group; });
 
-        if(!grouped_items.empty())
-            make_group(group, grouped_items, detail::OptionFormatter::Mode::Optional);
+        if(!grouped_items.empty()) {
+            out << make_group(group, grouped_items, detail::OptionFormatter::Mode::Optional);
+            if(group != groups.back())
+                out << "\n";
+        }
     }
 
     return out.str();
 }
 
-inline std::string AppFormatter::make_description(const App *app) const { return app->get_description(); }
+inline std::string AppFormatter::make_description(const App *app) const {
+    std::string desc = app->get_description();
+
+    if(!desc.empty())
+        return desc + "\n";
+    else
+        return "";
+}
 
 inline std::string AppFormatter::make_usage(const App *app, std::string name) const {
     std::stringstream out;
@@ -82,20 +91,28 @@ inline std::string AppFormatter::make_usage(const App *app, std::string name) co
             << (app->get_require_subcommand_min() == 0 ? "]" : "");
     }
 
+    out << std::endl;
+
     return out.str();
 }
 
-inline std::string AppFormatter::make_footer(const App *app) const { return app->get_footer(); }
+inline std::string AppFormatter::make_footer(const App *app) const {
+    std::string footer = app->get_footer();
+    if(!footer.empty())
+        return footer + "\n";
+    else
+        return "";
+}
 
 inline std::string AppFormatter::operator()(const App *app, std::string name, App::Formatter::Mode mode) const {
 
     std::stringstream out;
-    out << make_description(app) << std::endl;
+    out << make_description(app);
     if(mode == App::Formatter::Mode::Normal) {
-        out << make_usage(app, name) << std::endl;
-        out << make_groups(app) << std::endl;
+        out << make_usage(app, name);
+        out << make_groups(app);
         out << make_subcommands(app, mode);
-        out << make_footer(app) << std::endl;
+        out << make_footer(app);
     } else if(mode == App::Formatter::Mode::Sub) {
         out << make_subcommand(app, mode);
     } else if(mode == App::Formatter::Mode::All) {
@@ -115,25 +132,26 @@ inline std::string AppFormatter::make_subcommands(const App *app, App::Formatter
 
     std::vector<const App *> subcommands = app->get_subcommands({});
 
-    if(!subcommands.empty()) {
+    // Make a list in definition order of the groups seen
+    std::vector<std::string> subcmd_groups_seen;
+    for(const App *com : subcommands) {
+        std::string group_key = com->get_group();
+        if(!group_key.empty() &&
+           std::find_if(subcmd_groups_seen.begin(), subcmd_groups_seen.end(), [&group_key](std::string a) {
+               return detail::to_lower(a) == detail::to_lower(group_key);
+           }) == subcmd_groups_seen.end())
+            subcmd_groups_seen.push_back(group_key);
+    }
 
-        // Make a list in definition order of the groups seen
-        std::vector<std::string> subcmd_groups_seen;
-        for(const App *com : subcommands) {
-            std::string group_key = detail::to_lower(com->get_group());
-            if(!group_key.empty() &&
-               std::find(subcmd_groups_seen.begin(), subcmd_groups_seen.end(), group_key) != subcmd_groups_seen.end())
-                subcmd_groups_seen.push_back(group_key);
-        }
-
-        // For each group, filter out and print subcommands
-        for(const std::string &group : subcmd_groups_seen) {
-            out << std::endl << group << ":" << std::endl;
-            std::vector<const App *> subcommands_group =
-                app->get_subcommands([&group](const App *app) { return detail::to_lower(app->get_group()) == group; });
-            for(const App *new_com : subcommands_group)
-                out << detail::join(make_subcommand(new_com, mode));
-        }
+    // For each group, filter out and print subcommands
+    for(const std::string &group : subcmd_groups_seen) {
+        out << "\n"
+            << group << ":"
+            << "\n";
+        std::vector<const App *> subcommands_group = app->get_subcommands(
+            [&group](const App *app) { return detail::to_lower(app->get_group()) == detail::to_lower(group); });
+        for(const App *new_com : subcommands_group)
+            out << make_subcommand(new_com, mode);
     }
 
     return out.str();

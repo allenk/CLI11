@@ -52,7 +52,7 @@ class OptionFormatter {
     /// This is a dictionary of strings instead of enums
     /// so a user can extend if needed
     std::map<std::string, std::string> labels_{
-        {"REQUIRED", "(REQUIRED)"}, {"NEEDS", "Needs"}, {"EXCLUDES", "Exlucdes"}, {"ENV", "Env"}};
+        {"REQUIRED", "(REQUIRED)"}, {"NEEDS", "Needs"}, {"EXCLUDES", "Excludes"}, {"ENV", "Env"}};
 
     /// The width of the first column
     size_t column_width_{30};
