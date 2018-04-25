@@ -47,12 +47,9 @@ class OptionFormatter {
     /// @name Options
     ///@{
 
-    /// @brief The required help printout labels (user changable)
+    /// @brief The required help printout labels (user changeable)
     /// Values are REQUIRED, NEEDS, EXCLUDES
-    /// This is a dictionary of strings instead of enums
-    /// so a user can extend if needed
-    std::map<std::string, std::string> labels_{
-        {"REQUIRED", "(REQUIRED)"}, {"NEEDS", "Needs"}, {"EXCLUDES", "Excludes"}, {"ENV", "Env"}};
+    std::map<std::string, std::string> labels_{{"REQUIRED", "(REQUIRED)"}};
 
     /// The width of the first column
     size_t column_width_{30};
@@ -67,13 +64,13 @@ class OptionFormatter {
     ///@{
 
     /// Set the "REQUIRED" label
-    OptionFormatter *set_label(std::string key, std::string val) {
+    OptionFormatter *label(std::string key, std::string val) {
         labels_[key] = val;
         return this;
     }
 
     /// Set the column width
-    OptionFormatter *set_column_width(size_t val) {
+    OptionFormatter *column_width(size_t val) {
         column_width_ = val;
         return this;
     }
@@ -83,7 +80,12 @@ class OptionFormatter {
     ///@{
 
     /// Get the current value of a name (REQUIRED, etc.)
-    std::string get_label(std::string key) const { return labels_.at(key); }
+    std::string get_label(std::string key) const {
+        if(labels_.find(key) == labels_.end())
+            return key;
+        else
+            return labels_.at(key);
+    }
 
     /// Get the current column width
     size_t get_column_width() const { return column_width_; }
@@ -126,15 +128,9 @@ class AppFormatter {
     /// The width of the first column
     size_t column_width_{30};
 
-    /// @brief The required help printout labels (user changable)
-    /// Values are REQUIRED, NEEDS, EXCLUDES
-    /// This is a dictionary of strings instead of enums
-    /// so a user can extend if needed
-    std::map<std::string, std::string> labels_{{"USAGE", "Usage"},
-                                               {"OPTIONS", "OPTIONS"},
-                                               {"SUBCOMMAND", "SUBCOMMAND"},
-                                               {"SUBCOMMANDS", "SUBCOMMANDS"},
-                                               {"POSITIONALS", "Positionals"}};
+    /// @brief The required help printout labels (user changeable)
+    /// Values are Needs, Excludes, etc.
+    std::map<std::string, std::string> labels_;
 
     ///@}
     /// @name Basic
@@ -146,13 +142,13 @@ class AppFormatter {
     ///@{
 
     /// Set the "REQUIRED" label
-    AppFormatter *set_label(std::string key, std::string val) {
+    AppFormatter *label(std::string key, std::string val) {
         labels_[key] = val;
         return this;
     }
 
     /// Set the column width
-    AppFormatter *set_column_width(size_t val) {
+    AppFormatter *column_width(size_t val) {
         column_width_ = val;
         return this;
     }
@@ -162,7 +158,12 @@ class AppFormatter {
     ///@{
 
     /// Get the current value of a name (REQUIRED, etc.)
-    std::string get_label(std::string key) const { return labels_.at(key); }
+    std::string get_label(std::string key) const {
+        if(labels_.find(key) == labels_.end())
+            return key;
+        else
+            return labels_.at(key);
+    }
 
     /// Get the current column width
     size_t get_column_width() const { return column_width_; }

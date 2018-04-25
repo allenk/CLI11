@@ -23,7 +23,7 @@ inline std::string OptionFormatter::make_opts(const Option *opt) const {
 
     if(opt->get_type_size() != 0) {
         if(!opt->get_typeval().empty())
-            out << " " << opt->get_typeval();
+            out << " " << get_label(opt->get_typeval());
         if(!opt->get_defaultval().empty())
             out << "=" << opt->get_defaultval();
         if(opt->get_expected() > 1)
@@ -34,14 +34,14 @@ inline std::string OptionFormatter::make_opts(const Option *opt) const {
             out << " " << get_label("REQUIRED");
     }
     if(!opt->get_envname().empty())
-        out << " (" << get_label("ENV") << ":" << opt->get_envname() << ")";
+        out << " (" << get_label("Env") << ":" << opt->get_envname() << ")";
     if(!opt->get_needs().empty()) {
-        out << " " << get_label("NEEDS") << ":";
+        out << " " << get_label("Needs") << ":";
         for(const Option *op : opt->get_needs())
             out << " " << op->get_name();
     }
     if(!opt->get_excludes().empty()) {
-        out << " " << get_label("EXCLUDES") << ":";
+        out << " " << get_label("Excludes") << ":";
         for(const Option *op : opt->get_excludes())
             out << " " << op->get_name();
     }

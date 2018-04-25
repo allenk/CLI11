@@ -30,7 +30,7 @@ inline std::string AppFormatter::make_groups(const App *app) const {
         app->get_options([](const Option *opt) { return !opt->get_group().empty() && opt->get_positional(); });
 
     if(!positionals.empty())
-        out << make_group(get_label("POSITIONALS"), positionals, detail::OptionFormatter::Mode::Positional);
+        out << make_group(get_label("Positionals"), positionals, detail::OptionFormatter::Mode::Positional);
 
     // Options
     for(const std::string &group : groups) {
@@ -59,7 +59,7 @@ inline std::string AppFormatter::make_description(const App *app) const {
 inline std::string AppFormatter::make_usage(const App *app, std::string name) const {
     std::stringstream out;
 
-    out << get_label("USAGE") << ":" << (name.empty() ? "" : " ") << name;
+    out << get_label("Usage") << ":" << (name.empty() ? "" : " ") << name;
 
     std::vector<std::string> groups = app->get_groups();
 
