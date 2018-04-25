@@ -83,3 +83,5 @@ add_test(NAME subcom_in_files COMMAND subcommand_main subcommand_a -f this.txt -
 set_property(TEST subcom_in_files PROPERTY PASS_REGULAR_EXPRESSION
     "Working on file: this\.txt"
     "Using foo!")
+
+add_cli_exe(formatter formatter.cpp)

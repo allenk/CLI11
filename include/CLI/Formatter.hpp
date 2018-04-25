@@ -64,16 +64,10 @@ class OptionFormatter {
     ///@{
 
     /// Set the "REQUIRED" label
-    OptionFormatter *label(std::string key, std::string val) {
-        labels_[key] = val;
-        return this;
-    }
+    void label(std::string key, std::string val) { labels_[key] = val; }
 
     /// Set the column width
-    OptionFormatter *column_width(size_t val) {
-        column_width_ = val;
-        return this;
-    }
+    void column_width(size_t val) { column_width_ = val; }
 
     ///@}
     /// @name Getters
@@ -95,19 +89,19 @@ class OptionFormatter {
     ///@{
 
     /// @brief This is the name part of an option, Default: left column
-    std::string make_name(const Option *, Mode) const;
+    virtual std::string make_name(const Option *, Mode) const;
 
     /// @brief This is the options part of the name, Default: combined into left column
-    std::string make_opts(const Option *) const;
+    virtual std::string make_opts(const Option *) const;
 
     /// @brief This is the description. Default: Right column, on new line if left column too large
-    std::string make_desc(const Option *) const;
+    virtual std::string make_desc(const Option *) const;
 
     /// @brief This is used to print the name on the USAGE line (by App formatter)
-    std::string make_usage(const Option *opt) const;
+    virtual std::string make_usage(const Option *opt) const;
 
     /// @brief This is the standard help combiner that does the "default" thing.
-    std::string operator()(const Option *opt, Mode mode) const {
+    virtual std::string operator()(const Option *opt, Mode mode) const {
         std::stringstream out;
         if(mode == Mode::Usage)
             out << make_usage(opt);
@@ -142,16 +136,10 @@ class AppFormatter {
     ///@{
 
     /// Set the "REQUIRED" label
-    AppFormatter *label(std::string key, std::string val) {
-        labels_[key] = val;
-        return this;
-    }
+    void label(std::string key, std::string val) { labels_[key] = val; }
 
     /// Set the column width
-    AppFormatter *column_width(size_t val) {
-        column_width_ = val;
-        return this;
-    }
+    void column_width(size_t val) { column_width_ = val; }
 
     ///@}
     /// @name Getters
@@ -172,29 +160,29 @@ class AppFormatter {
     ///@{
 
     /// This prints out a group of options
-    std::string
+    virtual std::string
     make_group(std::string group, std::vector<const Option *> opts, detail::OptionFormatter::Mode mode) const;
 
     /// This prints out all the groups of options
-    std::string make_groups(const App *app) const;
+    virtual std::string make_groups(const App *app, detail::AppFormatter::Mode mode) const;
 
     /// This prints out all the subcommands
-    std::string make_subcommands(const App *app, Mode mode) const;
+    virtual std::string make_subcommands(const App *app, Mode mode) const;
 
     /// This prints out a subcommand
-    std::string make_subcommand(const App *sub, Mode mode) const;
+    virtual std::string make_subcommand(const App *sub, Mode mode) const;
 
     /// This prints out all the groups of options
-    std::string make_footer(const App *app) const;
+    virtual std::string make_footer(const App *app) const;
 
     /// This displays the description line
-    std::string make_description(const App *app) const;
+    virtual std::string make_description(const App *app) const;
 
     /// This displays the usage line
-    std::string make_usage(const App *app, std::string name) const;
+    virtual std::string make_usage(const App *app, std::string name) const;
 
     /// This puts everything together
-    std::string operator()(const App *, std::string, Mode) const;
+    virtual std::string operator()(const App *, std::string, Mode) const;
     ///@}
 };
 

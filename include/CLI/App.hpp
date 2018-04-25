@@ -106,6 +106,9 @@ class App {
     /// A pointer to the help flag if there is one INHERITABLE
     Option *help_ptr_{nullptr};
 
+    /// A pointer to the help all flag if there is one INHERITABLE
+    Option *help_all_ptr_{nullptr};
+
     /// This is the formatter for help printing. Default provided. INHERITABLE
     std::function<std::string(const App *, std::string, Formatter::Mode)> formatter_{Formatter()};
 
@@ -179,6 +182,9 @@ class App {
         if(parent_ != nullptr) {
             if(parent_->help_ptr_ != nullptr)
                 set_help_flag(parent_->help_ptr_->get_name(false, true), parent_->help_ptr_->get_description());
+            if(parent_->help_all_ptr_ != nullptr)
+                set_help_all_flag(parent_->help_all_ptr_->get_name(false, true),
+                                  parent_->help_all_ptr_->get_description());
 
             /// OptionDefaults
             option_defaults_ = parent_->option_defaults_;
@@ -400,6 +406,22 @@ class App {
         }
 
         return help_ptr_;
+    }
+
+    /// Set a help all flag, replaced the existing one if present
+    Option *set_help_all_flag(std::string name = "", std::string description = "") {
+        if(help_all_ptr_ != nullptr) {
+            remove_option(help_all_ptr_);
+            help_all_ptr_ = nullptr;
+        }
+
+        // Empty name will simply remove the help flag
+        if(!name.empty()) {
+            help_all_ptr_ = add_flag(name, description);
+            help_all_ptr_->configurable(false);
+        }
+
+        return help_all_ptr_;
     }
 
     /// Add option for flag
@@ -778,6 +800,11 @@ class App {
             return e.get_exit_code();
         }
 
+        if(dynamic_cast<const CLI::CallForAllHelp *>(&e) != nullptr) {
+            out << help("", App::Formatter::Mode::All);
+            return e.get_exit_code();
+        }
+
         if(e.get_exit_code() != static_cast<int>(ExitCodes::Success)) {
             if(failure_message_)
                 err << failure_message_(this, e) << std::flush;
@@ -997,6 +1024,9 @@ class App {
     /// Get a pointer to the help flag. (const)
     const Option *get_help_ptr() const { return help_ptr_; }
 
+    /// Get a pointer to the help all flag. (const)
+    const Option *get_help_all_ptr() const { return help_all_ptr_; }
+
     /// Get a pointer to the config option.
     Option *get_config_ptr() { return config_ptr_; }
 
@@ -1135,6 +1165,10 @@ class App {
 
         if(help_ptr_ != nullptr && help_ptr_->count() > 0) {
             throw CallForHelp();
+        }
+
+        if(help_all_ptr_ != nullptr && help_all_ptr_->count() > 0) {
+            throw CallForAllHelp();
         }
 
         // Process an INI file

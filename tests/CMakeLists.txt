@@ -9,6 +9,7 @@ set(CLI11_TESTS
     CreationTest
     SubcommandTest
     HelpTest
+    FormatterTest
     NewParseTest
     OptionalTest
     )

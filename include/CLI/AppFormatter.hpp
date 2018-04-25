@@ -23,7 +23,7 @@ inline std::string AppFormatter::make_group(std::string group,
     return out.str();
 }
 
-inline std::string AppFormatter::make_groups(const App *app) const {
+inline std::string AppFormatter::make_groups(const App *app, detail::AppFormatter::Mode mode) const {
     std::stringstream out;
     std::vector<std::string> groups = app->get_groups();
     std::vector<const Option *> positionals =
@@ -36,6 +36,15 @@ inline std::string AppFormatter::make_groups(const App *app) const {
     for(const std::string &group : groups) {
         std::vector<const Option *> grouped_items =
             app->get_options([&group](const Option *opt) { return opt->nonpositional() && opt->get_group() == group; });
+
+        if(mode == detail::AppFormatter::Mode::Sub) {
+            grouped_items.erase(std::remove_if(grouped_items.begin(),
+                                               grouped_items.end(),
+                                               [app](const Option *opt) {
+                                                   return app->get_help_ptr() == opt || app->get_help_all_ptr() == opt;
+                                               }),
+                                grouped_items.end());
+        }
 
         if(!group.empty() && !grouped_items.empty()) {
             out << make_group(group, grouped_items, detail::OptionFormatter::Mode::Optional);
@@ -107,15 +116,20 @@ inline std::string AppFormatter::make_footer(const App *app) const {
 inline std::string AppFormatter::operator()(const App *app, std::string name, App::Formatter::Mode mode) const {
 
     std::stringstream out;
-    out << make_description(app);
     if(mode == App::Formatter::Mode::Normal) {
+        out << make_description(app);
         out << make_usage(app, name);
-        out << make_groups(app);
+        out << make_groups(app, mode);
         out << make_subcommands(app, mode);
         out << make_footer(app);
     } else if(mode == App::Formatter::Mode::Sub) {
+        out << get_label("Subcommand") << " " << app->get_name() << ": ";
+        out << make_description(app);
         out << make_subcommand(app, mode);
     } else if(mode == App::Formatter::Mode::All) {
+        out << make_description(app);
+        out << make_usage(app, name);
+        out << make_groups(app, mode);
         std::vector<const App *> subs = app->get_subcommands({});
         std::vector<std::string> sub_details(subs.size());
         std::transform(subs.begin(), subs.end(), sub_details.begin(), [](const App *sub) {
@@ -158,8 +172,8 @@ inline std::string AppFormatter::make_subcommands(const App *app, App::Formatter
 }
 
 inline std::string AppFormatter::make_subcommand(const App *sub, App::Formatter::Mode mode) const {
-    if(mode == App::Formatter::Mode::All) {
-        return sub->help(sub->get_name(), AppFormatter::Mode::Sub);
+    if(mode == App::Formatter::Mode::Sub) {
+        return make_groups(sub, mode);
     } else {
         std::stringstream out;
         detail::format_help(out, sub->get_name(), sub->get_description(), column_width_);

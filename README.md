@@ -302,7 +302,7 @@ The default settings for options are inherited to subcommands, as well.
 
 ## Subclassing
 
-The App class was designed allow toolkits to subclass it, to provide preset default options (see above) and setup/teardown code. Subcommands remain an unsubclassed `App`, since those are not expected to need setup and teardown. The default `App` only adds a help flag, `-h,--help`, than can removed/replaced using `.set_help_flag(name, help_string)`. You can remove options if you have pointers to them using `.remove_option(opt)`. You can add a `pre_callback` override to customize the after parse
+The App class was designed allow toolkits to subclass it, to provide preset default options (see above) and setup/teardown code. Subcommands remain an unsubclassed `App`, since those are not expected to need setup and teardown. The default `App` only adds a help flag, `-h,--help`, than can removed/replaced using `.set_help_flag(name, help_string)`. You can also set a help-all flag with `.set_help_all_flag(name, help_string)`; this will expand the subcommands (one level only). You can remove options if you have pointers to them using `.remove_option(opt)`. You can add a `pre_callback` override to customize the after parse
 but before run behavior, while
 still giving the user freedom to `set_callback` on the main app.  
 

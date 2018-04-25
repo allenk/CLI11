@@ -536,6 +536,8 @@ TEST_F(TApp, SubcomInheritCaseCheck) {
 
     run();
     EXPECT_EQ((size_t)0, app.get_subcommands().size());
+    EXPECT_EQ((size_t)2, app.get_subcommands({}).size());
+    EXPECT_EQ((size_t)1, app.get_subcommands([](const CLI::App *s) { return s->get_name() == "sub1"; }).size());
 
     app.reset();
     args = {"SuB1"};

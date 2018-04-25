@@ -1,5 +1,6 @@
 ### Version 1.6: Formatters
 
+Added a new formatting system. You can now set the formatter on Apps and Options.
 
 Changes to the help system (most normal users will not notice this):
 
